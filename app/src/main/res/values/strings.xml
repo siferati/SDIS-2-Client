@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Mapapp</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="btn_start">Start</string>
 </resources>
