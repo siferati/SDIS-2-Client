@@ -21,9 +21,10 @@ public class MainActivity extends AppCompatActivity {
 
         btnStart = (Button) findViewById(R.id.btn_start);
         btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 if (isConnected()) {
-                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                    Intent intent = new Intent(MainActivity.this, MapActivity.class);
                     startActivity(intent);
                 } else {
                     Toast.makeText(MainActivity.this, "No Internet Connection", Toast.LENGTH_SHORT).show();
