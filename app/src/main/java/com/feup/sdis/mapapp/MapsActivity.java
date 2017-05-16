@@ -25,7 +25,7 @@ import java.util.List;
  * This class implements the Google Maps activity.
  * It's where the map is shown and the user can interact with it
  */
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
 
     /** GoogleMap */
     private GoogleMap map = null;
@@ -70,6 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // set listeners
         map.setOnMarkerDragListener(this);
         map.setOnMapClickListener(this);
+        map.setOnPolylineClickListener(this);
 
         LatLngBounds feup = new LatLngBounds(new LatLng(41.177509, -8.598646), new LatLng(41.179133, -8.593830));
         // can't scroll past feup bounds
@@ -100,6 +101,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // save a reference of the line being drawn
         activePolyline = map.addPolyline(new PolylineOptions()
                 .add(marker.getPosition()));
+
+        // allow the polyline to be clicked
+        activePolyline.setClickable(true);
     }
 
 
@@ -143,6 +147,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .draggable(true));
 
         activeMarkerStandingPos = activeMarker.getPosition();
+    }
+
+
+    @Override
+    public void onPolylineClick(Polyline polyline) {
+
+        // remove this polyline from the maze
+        for (Polyline line: maze) {
+            if (line.getId().equals(polyline.getId()))
+            {
+                maze.remove(line);
+                break;
+            }
+        }
+
+        // remove this polyline from the map
+        polyline.remove();
     }
 
 
