@@ -10,24 +10,27 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
 
-    Button btnStart;
+/**
+ * This class implements the main activity.
+ * It is the entry point of the app
+ */
+public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnStart = (Button) findViewById(R.id.btn_start);
+        Button btnStart = (Button) findViewById(R.id.btn_start);
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isConnected()) {
-                    Intent intent = new Intent(MainActivity.this, MapActivity.class);
+                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(MainActivity.this, "No Internet Connection", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, getText(R.string.no_internet_error), Toast.LENGTH_SHORT).show();
                 }
             }
         });
