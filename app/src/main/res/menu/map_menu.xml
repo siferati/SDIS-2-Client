@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/erase_line"
+        android:title="@string/erase_line" />
+    <item android:id="@+id/maze_entrance"
+        android:title="@string/maze_entrance" />
+    <item android:id="@+id/maze_exit"
+        android:title="@string/maze_exit" />
+    <item android:id="@+id/send_maze"
+        android:title="@string/send_maze" />
+</menu>

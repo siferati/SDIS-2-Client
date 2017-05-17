@@ -1,8 +1,13 @@
 package com.feup.sdis.mapapp;
 
+import android.graphics.Color;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -10,12 +15,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.PolyUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +52,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     /** The current polyline being drawn by the user */
     private Polyline activePolyline = null;
 
+    /** Entrance to the maze */
+    private Marker entrance = null;
+
+    /** True if next click on map is the entrance position. False otherwise */
+    private boolean pickingEntrance = false;
+
+    /** Exit to the maze */
+    private Marker exit = null;
+
+    /** True if the next click on map is the exit position. False otherwise */
+    private boolean pickingExit = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +73,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.map_menu, menu);
+        return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.erase_line:
+                for (Polyline polyline: maze) {
+                    polyline.setClickable(true);
+                }
+                break;
+            case R.id.maze_entrance:
+                pickingEntrance = true;
+                break;
+            case R.id.maze_exit:
+                pickingExit = true;
+                break;
+            case R.id.send_maze:
+                // TODO check if entrance and exit are connected to polylines
+                break;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+        return true;
     }
 
 
@@ -78,7 +130,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map.setMinZoomPreference(17);
         // center camera on feup
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(feup.getCenter(), 18));
-    }
+        }
 
 
     @Override
@@ -100,10 +152,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // save a reference of the line being drawn
         activePolyline = map.addPolyline(new PolylineOptions()
-                .add(marker.getPosition()));
-
-        // allow the polyline to be clicked
-        activePolyline.setClickable(true);
+                .add(marker.getPosition())
+                .color(Color.BLUE));
     }
 
 
@@ -124,9 +174,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // offset marker
         offsetMarker(marker, offset);
 
-        // extend the line being drawn to this position
-        extendPolyline(activePolyline, marker.getPosition());
-
         // add drawn line to the maze
         maze.add(activePolyline);
 
@@ -139,14 +186,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapClick(LatLng latLng) {
 
-        if (activeMarker != null)
-            activeMarker.remove();
+        if (pickingEntrance) {
 
-        activeMarker = map.addMarker(new MarkerOptions()
-                .position(latLng)
-                .draggable(true));
+            if (entrance != null)
+                entrance.remove();
 
-        activeMarkerStandingPos = activeMarker.getPosition();
+            entrance = map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+
+            pickingEntrance = false;
+        }
+        else if (pickingExit) {
+
+            if (exit != null)
+                exit.remove();
+
+            exit = map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+            pickingExit = false;
+        }
+        else {
+
+            if (activeMarker != null)
+                activeMarker.remove();
+
+            activeMarker = map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .draggable(true));
+
+            activeMarkerStandingPos = activeMarker.getPosition();
+        }
     }
 
 
@@ -164,6 +237,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // remove this polyline from the map
         polyline.remove();
+
+        // only one line is deleted at a time
+        for (Polyline line: maze) {
+            line.setClickable(false);
+        }
     }
 
 
@@ -185,7 +263,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * Offsets a marker position by delta
      *
      * @param marker Marker to change position
-     * @param delta  Offset ammount
+     * @param delta  Offset amount
      */
     public void offsetMarker(Marker marker, LatLng delta) {
 

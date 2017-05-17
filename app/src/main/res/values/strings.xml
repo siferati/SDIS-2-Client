@@ -3,5 +3,10 @@
     <string name="title_activity_maps">Map</string>
     <string name="btn_start">Start</string>
     <string name="marker_rdy_to_drag">Move the marker to draw a line</string>
+    <string name="polyline_long_click">Line was erased</string>
     <string name="no_internet_error">No Internet Connection</string>
+    <string name="erase_line">Erase a line</string>
+    <string name="maze_entrance">Maze entrance</string>
+    <string name="maze_exit">Maze exit</string>
+    <string name="send_maze">Send maze</string>
 </resources>
