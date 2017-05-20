@@ -22,12 +22,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button btnStart = (Button) findViewById(R.id.btn_start);
-        btnStart.setOnClickListener(new View.OnClickListener() {
+        Button btnMazeBuilder = (Button) findViewById(R.id.btn_maze_builder);
+        btnMazeBuilder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isConnected()) {
                     Intent intent = new Intent(MainActivity.this, MazeBuilderActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(MainActivity.this, getText(R.string.no_internet_error), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        Button btnMazePlayer = (Button) findViewById(R.id.btn_maze_player);
+        btnMazePlayer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isConnected()) {
+                    Intent intent = new Intent(MainActivity.this, MazePlayerActivity.class);
                     startActivity(intent);
                 } else {
                     Toast.makeText(MainActivity.this, getText(R.string.no_internet_error), Toast.LENGTH_SHORT).show();

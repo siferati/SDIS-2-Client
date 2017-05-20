@@ -39,5 +39,12 @@ public class MazePlayerActivity extends AppCompatActivity implements OnMapReadyC
 
         // disable toolbar when clicking markers
         uiSettings.setMapToolbarEnabled(false);
+
+        LatLngBounds feup = new LatLngBounds(new LatLng(41.177509, -8.598646), new LatLng(41.179133, -8.593830));
+        // can't scroll past feup bounds
+        map.setLatLngBoundsForCameraTarget(feup);
+        map.setMinZoomPreference(17);
+        // center camera on feup
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(feup.getCenter(), 18));
     }
 }

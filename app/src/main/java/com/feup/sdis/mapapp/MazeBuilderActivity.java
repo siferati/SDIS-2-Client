@@ -140,7 +140,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
         map.setMinZoomPreference(17);
         // center camera on feup
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(feup.getCenter(), 18));
-        }
+    }
 
 
     @Override
