@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Mapapp</string>
     <string name="title_activity_maps">Map</string>
+    <string name="title_activity_maze_player">Maze Player</string>
     <string name="btn_start">Start</string>
     <string name="marker_rdy_to_drag">Move the marker to draw a line</string>
     <string name="polyline_long_click">Line was erased</string>

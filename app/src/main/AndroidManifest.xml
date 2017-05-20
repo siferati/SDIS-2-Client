@@ -38,6 +38,10 @@
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps"></activity>
+
+        <activity
+            android:name=".MazePlayerActivity"
+            android:label="@string/title_activity_maze_player"></activity>
     </application>
 
 </manifest>
