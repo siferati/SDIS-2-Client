@@ -1,8 +1,8 @@
 package com.feup.sdis.mapapp;
 
 import android.graphics.Color;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -32,7 +32,10 @@ import java.util.List;
  * This class implements the Google Maps activity.
  * It's where the map is shown and the user can interact with it
  */
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
+
+    /** Max range entrance and exit can be of the rest of the maze */
+    public static double TOLERANCE = 3.5;
 
     /** GoogleMap */
     private GoogleMap map = null;
@@ -100,7 +103,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 pickingExit = true;
                 break;
             case R.id.send_maze:
-                // TODO check if entrance and exit are connected to polylines
+
+                if (entrance == null || exit == null  || !isLocationOnMaze(entrance.getPosition(), maze, TOLERANCE) || !isLocationOnMaze(exit.getPosition(), maze, TOLERANCE)) {
+
+                    Toast toast = Toast.makeText(this, getText(R.string.wrong_entrance_or_exit), Toast.LENGTH_LONG);
+                    toast.show();
+                } else {
+                    sendMaze(maze);
+                }
                 break;
             default:
                 return super.onOptionsItemSelected(item);
@@ -271,5 +281,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 marker.getPosition().latitude + delta.latitude,
                 marker.getPosition().longitude + delta.longitude
         ));
+    }
+
+
+    /**
+     * Computes whether the given point lies on or near a maze, within a specified tolerance in meters.
+     *
+     * @param point Point to test
+     * @param maze Arraylist of polylines
+     * @param tolerance Max number (in meters) point can be of maze
+     */
+    public boolean isLocationOnMaze(LatLng point, ArrayList<Polyline> maze, double tolerance) {
+
+        for (Polyline polyline : maze) {
+
+            if (PolyUtil.isLocationOnPath(point, polyline.getPoints(), polyline.isGeodesic(), tolerance)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    /**
+     * Sends the maze to the server
+     *
+     * @param maze Maze to send
+     *
+     * @return True if send was successful. False otherwise
+     */
+    public boolean sendMaze(ArrayList<Polyline> maze) {
+
+        for (Polyline polyline: maze) {
+
+            String encodedPolyline = PolyUtil.encode(polyline.getPoints());
+            // TODO  send encodedPolyline to server
+            Log.d("dani", encodedPolyline);
+        }
+
+        return true;
     }
 }

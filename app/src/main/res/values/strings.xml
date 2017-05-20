@@ -9,4 +9,5 @@
     <string name="maze_entrance">Maze entrance</string>
     <string name="maze_exit">Maze exit</string>
     <string name="send_maze">Send maze</string>
+    <string name="wrong_entrance_or_exit">Entrance and exit of the maze need to be connected to the rest of the maze</string>
 </resources>
