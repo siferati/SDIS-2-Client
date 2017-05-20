@@ -29,8 +29,8 @@ import java.util.List;
 
 
 /**
- * This class implements the Google Maps activity.
- * It's where the map is shown and the user can interact with it
+ * This class implements the Maze Builder activity
+ * It's where the user can create a maze and send it to the server
  */
 public class MazeBuilderActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
 
@@ -319,6 +319,9 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
             // TODO  send encodedPolyline to server
             Log.d("dani", encodedPolyline);
         }
+
+        Log.d("dani", entrance.getPosition().toString());
+        Log.d("dani", exit.getPosition().toString());
 
         return true;
     }
