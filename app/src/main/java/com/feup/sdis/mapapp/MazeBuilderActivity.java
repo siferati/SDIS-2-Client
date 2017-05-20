@@ -32,7 +32,7 @@ import java.util.List;
  * This class implements the Google Maps activity.
  * It's where the map is shown and the user can interact with it
  */
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
+public class MazeBuilderActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener, GoogleMap.OnPolylineClickListener {
 
     /** Max range entrance and exit can be of the rest of the maze */
     public static double TOLERANCE = 3.5;
@@ -71,7 +71,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
+        setContentView(R.layout.activity_maze_builder);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -82,7 +82,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.map_menu, menu);
+        inflater.inflate(R.menu.maze_builder_menu, menu);
         return true;
     }
 

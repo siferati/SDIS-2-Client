@@ -36,8 +36,8 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".MapsActivity"
-            android:label="@string/title_activity_maps"></activity>
+            android:name=".MazeBuilderActivity"
+            android:label="@string/title_activity_maze_builder"></activity>
 
         <activity
             android:name=".MazePlayerActivity"
