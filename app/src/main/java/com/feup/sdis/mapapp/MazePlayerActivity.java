@@ -1,6 +1,9 @@
 package com.feup.sdis.mapapp;
 
 
+import android.app.Activity;
+import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -11,10 +14,20 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Result;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -39,14 +52,27 @@ import java.util.ArrayList;
 public class MazePlayerActivity extends AppCompatActivity
         implements OnMapReadyCallback,
                 GoogleApiClient.ConnectionCallbacks,
-                GoogleApiClient.OnConnectionFailedListener {
+                GoogleApiClient.OnConnectionFailedListener,
+                ResultCallback<LocationSettingsResult> {
 
 
     /** Tag used for logs */
-    private static final String TAG = "dani";
+    private static final String TAG = MazePlayerActivity.class.getSimpleName();
+
+    /** Location request interval, in milliseconds */
+    private static final int LOCATION_REQUEST_INTERVALL = 5000;
+
+    /** Location request fastest interval, in milliseconds */
+    private static final int LOCATION_REQUEST_FASTEST_INTERVALL = 5000;
 
     /** GoogleApiClient */
     private GoogleApiClient googleApiClient = null;
+
+    /** MapFragment */
+    private SupportMapFragment mapFragment = null;
+
+    /** LocationRequest */
+    private LocationRequest locationRequest = null;
 
     /** GoogleMap */
     private GoogleMap map = null;
@@ -54,8 +80,11 @@ public class MazePlayerActivity extends AppCompatActivity
     /** GoogleMap camera position */
     private CameraPosition cameraPosition = null;
 
-    /** Request code used for callback */
+    /** Request code used for callback onRequestPermissionsResult */
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+
+    /** Request code user for callback onActivityResult */
+    private static final int REQUEST_CHECK_SETTINGS = 2;
 
     /** True if user gave permissions. False otherwise */
     private boolean locationPermissionGranted = false;
@@ -106,6 +135,12 @@ public class MazePlayerActivity extends AppCompatActivity
                 .addApi(LocationServices.API)
                 .build();
         googleApiClient.connect();
+
+        // Create location request
+        locationRequest = LocationRequest.create()
+                .setInterval(LOCATION_REQUEST_INTERVALL)
+                .setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVALL)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
 
@@ -122,20 +157,129 @@ public class MazePlayerActivity extends AppCompatActivity
     }
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // TODO check if this is before or after super call
+        if (googleApiClient.isConnected())
+            googleApiClient.disconnect();
+    }
+
+
     /**
      * Builds the map when the Google Play services client is successfully connected.
      */
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map_maze_player);
-        mapFragment.getMapAsync(this);
+
+        // Build location settings request
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest)
+                .setAlwaysShow(true);
+
+        // Check whether current location settings are satisfied
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(this);
     }
 
 
     /**
-     * Handles failure to connect to the Google Play services client.
+     * Checks whether current location settings are satisfied
+     */
+    @Override
+    public void onResult(@NonNull LocationSettingsResult result) {
+
+        final Status status = result.getStatus();
+
+        switch (status.getStatusCode()) {
+
+            case LocationSettingsStatusCodes.SUCCESS:
+                // All location settings are satisfied. The client can initialize location
+                // requests here.
+
+                // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+                mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                        .findFragmentById(R.id.map_maze_player);
+                mapFragment.getMapAsync(this);
+
+                break;
+
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                // Location settings are not satisfied. But could be fixed by showing the user
+                // a dialog.
+
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    status.startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
+
+                } catch (IntentSender.SendIntentException e) {
+                    // Log error
+                    Log.d(TAG, "Location settings request failed: Exception at startResolutionForResult: "
+                            + e.getMessage());
+                }
+                break;
+
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                // Location settings are not satisfied. However, we have no way to fix the
+                // settings so we won't show the dialog.
+                Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
+                toast.show();
+                finish();
+
+                break;
+
+            default:
+                break;
+        }
+    }
+
+
+    /**
+     * Handles the result of the request for location settings
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+
+            case REQUEST_CHECK_SETTINGS:
+
+                switch (resultCode) {
+
+                    case Activity.RESULT_OK:
+                        // All required changes were successfully made
+
+                        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+                        mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                                .findFragmentById(R.id.map_maze_player);
+                        mapFragment.getMapAsync(this);
+
+                        break;
+
+                    case Activity.RESULT_CANCELED:
+                        // The user was asked to change settings, but chose not to
+                        Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
+                        toast.show();
+                        finish();
+
+                        break;
+
+                    default:
+                        break;
+                }
+
+                break;
+
+            default:
+                break;
+        }
+    }
+
+
+    /**
+     * Handles failure to connect to the Google Play services client
      */
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -147,7 +291,7 @@ public class MazePlayerActivity extends AppCompatActivity
 
 
     /**
-     * Handles suspension of the connection to the Google Play services client.
+     * Handles suspension of the connection to the Google Play services client
      */
     @Override
     public void onConnectionSuspended(int i) {
@@ -157,7 +301,7 @@ public class MazePlayerActivity extends AppCompatActivity
 
     /**
      * Manipulates the map when it's available.
-     * This callback is triggered when the map is ready to be used.
+     * This callback is triggered when the map is ready to be used
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -168,6 +312,9 @@ public class MazePlayerActivity extends AppCompatActivity
 
         // disable toolbar when clicking markers
         uiSettings.setMapToolbarEnabled(false);
+
+        // Get the current location of the device and set the position of the map.
+        getDeviceLocation();
 
         /*
         LatLngBounds feup = new LatLngBounds(new LatLng(41.177509, -8.598646), new LatLng(41.179133, -8.593830));
@@ -212,12 +359,6 @@ public class MazePlayerActivity extends AppCompatActivity
                 .position(new LatLng(41.17829134579214, -8.598243109881878))
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
         */
-
-        // Fetch the maze from the server and show it
-        updateLocationUI();
-
-        // Get the current location of the device and set the position of the map.
-        getDeviceLocation();
     }
 
 
@@ -248,6 +389,10 @@ public class MazePlayerActivity extends AppCompatActivity
             lastKnownLocation = LocationServices.FusedLocationApi
                     .getLastLocation(googleApiClient);
         }
+
+        // Fetch the maze from the server and show it
+        updateLocationUI();
+
     }
 
 
@@ -267,7 +412,6 @@ public class MazePlayerActivity extends AppCompatActivity
                 }
             }
         }
-        updateLocationUI();
     }
 
 
