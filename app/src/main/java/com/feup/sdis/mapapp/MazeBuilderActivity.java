@@ -3,7 +3,6 @@ package com.feup.sdis.mapapp;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -317,11 +316,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
             String encodedPolyline = PolyUtil.encode(polyline.getPoints());
             // TODO  send encodedPolyline to server
-            Log.d("dani", encodedPolyline);
         }
-
-        Log.d("dani", entrance.getPosition().toString());
-        Log.d("dani", exit.getPosition().toString());
 
         return true;
     }
