@@ -26,6 +26,15 @@ public class SelectMapActivity extends AppCompatActivity {
             }
         });
 
+        Button btnPlay = (Button) findViewById(R.id.btn_play);
+        btnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SelectMapActivity.this, MazePlayerActivity.class);
+                startActivity(intent);
+            }
+        });
+
 
 
     }
