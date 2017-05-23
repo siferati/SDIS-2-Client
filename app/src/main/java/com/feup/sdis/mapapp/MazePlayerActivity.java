@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -19,31 +18,27 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.android.PolyUtil;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * This class implements the Maze Player activity
@@ -53,17 +48,18 @@ public class MazePlayerActivity extends AppCompatActivity
         implements OnMapReadyCallback,
                 GoogleApiClient.ConnectionCallbacks,
                 GoogleApiClient.OnConnectionFailedListener,
-                ResultCallback<LocationSettingsResult> {
+                ResultCallback<LocationSettingsResult>,
+                LocationListener{
 
 
     /** Tag used for logs */
     private static final String TAG = MazePlayerActivity.class.getSimpleName();
 
     /** Location request interval, in milliseconds */
-    private static final int LOCATION_REQUEST_INTERVALL = 5000;
+    private static final int LOCATION_REQUEST_INTERVAL = 5000;
 
     /** Location request fastest interval, in milliseconds */
-    private static final int LOCATION_REQUEST_FASTEST_INTERVALL = 5000;
+    private static final int LOCATION_REQUEST_FASTEST_INTERVAL = 5000;
 
     /** GoogleApiClient */
     private GoogleApiClient googleApiClient = null;
@@ -77,9 +73,6 @@ public class MazePlayerActivity extends AppCompatActivity
     /** GoogleMap */
     private GoogleMap map = null;
 
-    /** GoogleMap camera position */
-    private CameraPosition cameraPosition = null;
-
     /** Request code used for callback onRequestPermissionsResult */
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
 
@@ -90,7 +83,7 @@ public class MazePlayerActivity extends AppCompatActivity
     private boolean locationPermissionGranted = false;
 
     /** Last known location */
-    private Location lastKnownLocation = null;
+    private Marker lastKnownLocation = null;
 
     /** List of all polylines that make up this maze */
     private ArrayList<Polyline> maze = new ArrayList<>();
@@ -101,28 +94,13 @@ public class MazePlayerActivity extends AppCompatActivity
     /** Exit to the maze */
     private Marker exit = null;
 
-    /** Key for storing activity state */
-    private static final String KEY_CAMERA_POSITION = "camera_position";
-
-    /** Key for storing activity state */
-    private static final String KEY_LOCATION = "location";
-
     /** Default map zoom */
-    private static final int DEFAULT_ZOOM = 18;
-
-    /** Default camera target */
-    private static final LatLng DEFAULT_LOCATION = new LatLng(41.1785749, -8.5962507);
+    private static final int MIN_ZOOM = 18;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Retrieve location and camera position from saved instance state.
-        if (savedInstanceState != null) {
-            lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
-            cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
-        }
 
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maze_player);
@@ -138,22 +116,9 @@ public class MazePlayerActivity extends AppCompatActivity
 
         // Create location request
         locationRequest = LocationRequest.create()
-                .setInterval(LOCATION_REQUEST_INTERVALL)
-                .setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVALL)
+                .setInterval(LOCATION_REQUEST_INTERVAL)
+                .setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVAL)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-    }
-
-
-    /**
-     * Saves the state of the map when the activity is paused.
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        if (map != null) {
-            outState.putParcelable(KEY_CAMERA_POSITION, map.getCameraPosition());
-            outState.putParcelable(KEY_LOCATION, lastKnownLocation);
-            super.onSaveInstanceState(outState);
-        }
     }
 
 
@@ -310,11 +275,16 @@ public class MazePlayerActivity extends AppCompatActivity
 
         UiSettings uiSettings = map.getUiSettings();
 
-        // disable toolbar when clicking markers
+        // disable unwanted ui settings
         uiSettings.setMapToolbarEnabled(false);
+        uiSettings.setIndoorLevelPickerEnabled(false);
+        uiSettings.setScrollGesturesEnabled(false);
+        uiSettings.setTiltGesturesEnabled(false);
+
+        map.setMinZoomPreference(MIN_ZOOM);
 
         // Get the current location of the device and set the position of the map.
-        getDeviceLocation();
+        startLocationUpdates();
 
         /*
         LatLngBounds feup = new LatLngBounds(new LatLng(41.177509, -8.598646), new LatLng(41.179133, -8.593830));
@@ -363,14 +333,10 @@ public class MazePlayerActivity extends AppCompatActivity
 
 
     /**
-     * Gets the current location of the device, and positions the map's camera.
+     * Calls for regular location updates
      */
-    private void getDeviceLocation() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
+    public void startLocationUpdates() {
+
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -381,18 +347,26 @@ public class MazePlayerActivity extends AppCompatActivity
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
 
-        /*
-         * Get the best and most recent location of the device, which may be null in rare
-         * cases when a location is not available.
-         */
         if (locationPermissionGranted) {
-            lastKnownLocation = LocationServices.FusedLocationApi
-                    .getLastLocation(googleApiClient);
+            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
         }
+    }
 
-        // Fetch the maze from the server and show it
-        updateLocationUI();
 
+    /**
+     * Handles location update
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+
+        LatLng latLng = new LatLng(
+                location.getLatitude(),
+                location.getLongitude());
+
+        Log.d("dani", latLng.toString());
+        Log.d("dani", DateFormat.getTimeInstance().format(new Date()));
+
+        update(latLng);
     }
 
 
@@ -416,40 +390,22 @@ public class MazePlayerActivity extends AppCompatActivity
 
 
     /**
-     * Updates the map's UI settings based on whether the user has granted location permission.
+     * Updates the map (ie move camera)
      */
-    private void updateLocationUI() {
-        if (map == null) {
-            return;
+    private void update(LatLng lastKnownLatLng) {
+
+        // remove previous marker
+        if (lastKnownLocation != null) {
+            lastKnownLocation.remove();
         }
 
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
+        // set marker at new position
+        lastKnownLocation = map.addMarker(new MarkerOptions()
+                .position(lastKnownLatLng));
 
-        // Set the map's camera position to the current location of the device.
-        if (cameraPosition != null) {
-            map.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        } else if (lastKnownLocation != null) {
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                    new LatLng(lastKnownLocation.getLatitude(),
-                            lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-        } else {
-            Log.d(TAG, "Current location is null. Using defaults.");
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(DEFAULT_LOCATION, DEFAULT_ZOOM));
-            map.getUiSettings().setMyLocationButtonEnabled(false);
-        }
+        // Set the map's camera position to the current location of the device
+        map.moveCamera(CameraUpdateFactory.newLatLng(
+                lastKnownLocation.getPosition()));
 
     }
 }
