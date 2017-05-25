@@ -324,8 +324,8 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
         try {
 
-            mapJSON.put("username", "user1");
-            mapJSON.put("userhash", "ABC");
+            jsonAll.put("username", "user1");
+            jsonAll.put("userhash", "ABC");
             mapJSON.put("mapname", "o_mapa");
 
             mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
@@ -353,6 +353,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
             lineArray.put(singleLine);
             jsonAll.put("lines",lineArray);
+
 
             // TODO: localhost being used.
             String mapId = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
