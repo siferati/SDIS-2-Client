@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.feup.sdis.mapapp.client.ServerService;
 
 /**
  * Created by Utilizador on 21-05-2017.

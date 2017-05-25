@@ -3,12 +3,14 @@ package com.feup.sdis.mapapp;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.feup.sdis.mapapp.client.ServerService;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -22,6 +24,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -312,10 +317,53 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
      */
     public boolean sendMaze(ArrayList<Polyline> maze) {
 
-        for (Polyline polyline: maze) {
+        JSONObject mapJSON = new JSONObject();
+        JSONObject jsonAll = new JSONObject();
+        JSONObject singleLine = new JSONObject();
+        JSONArray lineArray = new JSONArray();
 
-            String encodedPolyline = PolyUtil.encode(polyline.getPoints());
-            // TODO  send encodedPolyline to server
+        try {
+
+            mapJSON.put("username", "user1");
+            mapJSON.put("userhash", "ABC");
+            mapJSON.put("mapname", "o_mapa");
+
+            mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
+            mapJSON.put("startlng", Double.valueOf(entrance.getPosition().longitude).toString());
+
+            mapJSON.put("finishlat", Double.valueOf(exit.getPosition().latitude).toString());
+            mapJSON.put("finishlng", Double.valueOf(exit.getPosition().longitude).toString());
+
+            jsonAll.put("map", mapJSON);
+
+        } catch(org.json.JSONException e){
+            e.printStackTrace();
+            return false;
+        }
+
+        try{
+
+            for (Polyline polyline: maze) {
+
+                String encodedPolyline = PolyUtil.encode(polyline.getPoints());
+                singleLine = new JSONObject();
+                singleLine.put(encodedPolyline, "");
+
+            }
+
+            lineArray.put(singleLine);
+            jsonAll.put("lines",lineArray);
+
+            // TODO: localhost being used.
+            String mapId = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
+            Log.i("tag", "MapId: " + mapId);
+
+        } catch(java.util.concurrent.ExecutionException e){
+            e.printStackTrace();
+        } catch(java.lang.InterruptedException e){
+            e.printStackTrace();
+        } catch(org.json.JSONException e){
+            e.printStackTrace();
         }
 
         return true;

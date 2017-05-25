@@ -3,9 +3,12 @@ package com.feup.sdis.mapapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import com.feup.sdis.mapapp.client.ServerService;
 
 /**
  * Created by Utilizador on 21-05-2017.
@@ -35,7 +38,10 @@ public class SelectMapActivity extends AppCompatActivity {
             }
         });
 
-
-
+        // TODO: delete this
+        try  {
+            String response = new ServerService().execute("maps?name=mapa1", "GET", null).get();
+            Log.i("tag", response);
+        } catch(Exception e) {e.printStackTrace();}
     }
 }
