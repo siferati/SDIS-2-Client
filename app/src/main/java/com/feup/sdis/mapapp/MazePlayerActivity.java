@@ -436,6 +436,7 @@ public class MazePlayerActivity extends AppCompatActivity
                 lastValidLocation.setVisible(true);
             } else {
                 lastValidLocation.setVisible(false);
+                lastValidLocation.setPosition(lastKnownLatLng);
             }
         }
         else {
