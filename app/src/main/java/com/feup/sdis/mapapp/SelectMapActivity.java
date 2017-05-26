@@ -42,6 +42,7 @@ public class SelectMapActivity extends AppCompatActivity {
         });
 
         // TODO: delete this
+        /*
         try  {
             String response = new ServerService().execute("maps?name=mapa1", "GET", null).get();
             Log.i("tag", response);
@@ -75,5 +76,6 @@ public class SelectMapActivity extends AppCompatActivity {
         } catch(org.json.JSONException e){
             e.printStackTrace();
         } catch (Exception e){}
+        */
     }
 }
