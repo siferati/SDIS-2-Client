@@ -61,16 +61,16 @@ public class MazePlayerActivity extends AppCompatActivity
     private static final String TAG = MazePlayerActivity.class.getSimpleName();
 
     /** Max range player can be from maze (in meters) */
-    public static double TOLERANCE = 3.5;
+    public static double TOLERANCE = 30;
 
     /** Max distance a play can move between location updates */
-    public static double MOVE_TOLERANCE = 20;
+    public static double MOVE_TOLERANCE = 30;
 
     /** Location request interval, in milliseconds */
-    private static final int LOCATION_REQUEST_INTERVAL = 5000;
+    private static final int LOCATION_REQUEST_INTERVAL = 2000;
 
     /** Location request fastest interval, in milliseconds */
-    private static final int LOCATION_REQUEST_FASTEST_INTERVAL = 5000;
+    private static final int LOCATION_REQUEST_FASTEST_INTERVAL = 2000;
 
     /** GoogleApiClient */
     private GoogleApiClient googleApiClient = null;
@@ -347,8 +347,6 @@ public class MazePlayerActivity extends AppCompatActivity
         exit = map.addMarker(new MarkerOptions()
                 .position(new LatLng(41.17767384142088, -8.595726862549782))
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
-
-        map.moveCamera(CameraUpdateFactory.newLatLng(entrance.getPosition()));
     }
 
 
@@ -428,14 +426,18 @@ public class MazePlayerActivity extends AppCompatActivity
         map.moveCamera(CameraUpdateFactory.newLatLng(
                lastKnownLatLng));
 
-
-        if (isPlayerOnMaze()) {
+        if (lastValidLocation.getPosition().equals(entrance.getPosition())) {
+            Toast.makeText(this, "Please go to the entrance of the maze", Toast.LENGTH_SHORT).show();
+            lastValidLocation.setVisible(false);
+        }
+        else if (isPlayerOnMaze()) {
 
             if (SphericalUtil.computeDistanceBetween(lastKnownLatLng, lastValidLocation.getPosition()) > MOVE_TOLERANCE) {
                 Toast.makeText(this, "Please return to your previous location", Toast.LENGTH_SHORT).show();
                 lastValidLocation.setVisible(true);
             } else {
                 lastValidLocation.setVisible(false);
+                lastValidLocation.setPosition(lastKnownLatLng);
             }
         }
         else {

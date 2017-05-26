@@ -41,7 +41,5 @@ public class SelectMapActivity extends AppCompatActivity {
             }
         });
 
-        
-
     }
 }
