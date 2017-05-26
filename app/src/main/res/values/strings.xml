@@ -13,4 +13,6 @@
     <string name="send_maze">Send maze</string>
     <string name="wrong_entrance_or_exit">Entrance and exit of the maze need to be connected to the rest of the maze</string>
     <string name="google_api_connection_error">An error has occurred and a connection to Google APIs could not be established</string>
+    <string name="created_maze_succ">Maze submitted successfully</string>
+    <string name="created_maze_fail">Maze submitted with no success</string>
 </resources>

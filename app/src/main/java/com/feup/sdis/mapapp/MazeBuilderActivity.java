@@ -326,7 +326,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
             jsonAll.put("username", "user1");
             jsonAll.put("userhash", "ABC");
-            mapJSON.put("mapname", "o_mapa");
+            mapJSON.put("name", "o_mapa");
 
             mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
             mapJSON.put("startlng", Double.valueOf(entrance.getPosition().longitude).toString());
@@ -347,7 +347,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
                 String encodedPolyline = PolyUtil.encode(polyline.getPoints());
                 singleLine = new JSONObject();
-                singleLine.put(encodedPolyline, "");
+                singleLine.put("draw", encodedPolyline);
 
             }
 
@@ -356,8 +356,17 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
 
             // TODO: localhost being used.
-            String mapId = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
-            Log.i("tag", "MapId: " + mapId);
+            String response = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
+
+            if (ServerService.decodeResponse(response) == 201){
+                Toast toast = Toast.makeText(this, getText(R.string.created_maze_succ), Toast.LENGTH_LONG);
+                toast.show();
+            } else {
+                Toast toast = Toast.makeText(this, getText(R.string.created_maze_fail), Toast.LENGTH_LONG);
+                toast.show();
+            }
+
+
 
         } catch(java.util.concurrent.ExecutionException e){
             e.printStackTrace();

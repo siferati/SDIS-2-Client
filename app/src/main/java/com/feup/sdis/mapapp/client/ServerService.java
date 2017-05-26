@@ -26,6 +26,8 @@ public class ServerService extends AsyncTask<String, Void, String> {
     /** The response returned by the server **/
     String response;
 
+    int responseCode;
+
     /** Default Constructor, does nothing **/
     public ServerService() {
         this.url = null;
@@ -53,25 +55,27 @@ public class ServerService extends AsyncTask<String, Void, String> {
 
             switch(method) {
                 case "GET":{
-                    this.response = getResponse(urlConnection);
-                    return this.response;
+                    getResponse(urlConnection);
+                    break;
                 }
                 case "POST": {
                     String body = parameters[2];
-                    this.response = postBody(urlConnection, body);
-                    return this.response;
+                    postBody(urlConnection, body);
+                    break;
                 }
                 case "DELETE": {
-                    this.response = getResponse(urlConnection);
-                    return this.response;
+                    getResponse(urlConnection);
+                    break;
                 }
                 case "PUT" : {
                     String body = parameters[2];
-                    this.response = postBody(urlConnection, body);
-                    return this.response;
+                    postBody(urlConnection, body);
+                    break;
                 }
                 default: return null;
             }
+
+            return String.valueOf(this.responseCode) + " - " + this.response;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -91,7 +95,7 @@ public class ServerService extends AsyncTask<String, Void, String> {
         Log.i("Response", "" + this.response);
     }
 
-    private String getResponse(HttpURLConnection urlConnection) throws IOException{
+    private void getResponse(HttpURLConnection urlConnection) throws IOException{
 
         InputStreamReader isw = new InputStreamReader(urlConnection.getInputStream());
         BufferedReader reader = new BufferedReader(isw);
@@ -103,7 +107,8 @@ public class ServerService extends AsyncTask<String, Void, String> {
             response += line;
         }
 
-        return response;
+        this.response = response;
+        this.responseCode = urlConnection.getResponseCode();
     }
 
     private String postBody(HttpURLConnection urlConnection, String requestBody) throws IOException {
@@ -116,8 +121,14 @@ public class ServerService extends AsyncTask<String, Void, String> {
 
         Log.i("LOGGGG", requestBody);
 
-        return getResponse(urlConnection);
+        getResponse(urlConnection);
 
+        return this.response;
+
+    }
+
+    public static int decodeResponse(String fullResponse) {
+        return Integer.parseInt(fullResponse.split(" - ")[0]);
     }
 
 }
