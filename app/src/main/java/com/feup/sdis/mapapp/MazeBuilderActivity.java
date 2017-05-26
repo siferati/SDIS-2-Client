@@ -1,13 +1,17 @@
 package com.feup.sdis.mapapp;
 
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.feup.sdis.mapapp.client.ServerService;
@@ -71,6 +75,9 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
     /** True if the next click on map is the exit position. False otherwise */
     private boolean pickingExit = false;
 
+    /** Map name to be submitted **/
+    private String mapName = "";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +120,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                     Toast toast = Toast.makeText(this, getText(R.string.wrong_entrance_or_exit), Toast.LENGTH_LONG);
                     toast.show();
                 } else {
-                    sendMaze(maze);
+                    sendMaze();
                 }
                 break;
             default:
@@ -311,71 +318,100 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
     /**
      * Sends the maze to the server
      *
-     * @param maze Maze to send
      *
      * @return True if send was successful. False otherwise
      */
-    public boolean sendMaze(ArrayList<Polyline> maze) {
+    public boolean sendMaze() {
 
-        JSONObject mapJSON = new JSONObject();
-        JSONObject jsonAll = new JSONObject();
-        JSONObject singleLine = new JSONObject();
-        JSONArray lineArray = new JSONArray();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Insert the map name");
 
-        try {
+        final EditText nameInput = new EditText(this);
+        nameInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(nameInput);
 
-            jsonAll.put("username", "user1");
-            jsonAll.put("userhash", "ABC");
-            mapJSON.put("name", "o_mapa");
+        builder.setPositiveButton("Sumbit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+                mapName = nameInput.getText().toString();
 
-            mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
-            mapJSON.put("startlng", Double.valueOf(entrance.getPosition().longitude).toString());
+                JSONObject mapJSON = new JSONObject();
+                JSONObject jsonAll = new JSONObject();
+                JSONObject singleLine = new JSONObject();
+                JSONArray lineArray = new JSONArray();
 
-            mapJSON.put("finishlat", Double.valueOf(exit.getPosition().latitude).toString());
-            mapJSON.put("finishlng", Double.valueOf(exit.getPosition().longitude).toString());
+                try {
 
-            jsonAll.put("map", mapJSON);
+                    jsonAll.put("username", "user1");
+                    jsonAll.put("userhash", "ABC");
+                    mapJSON.put("name", mapName);
 
-        } catch(org.json.JSONException e){
-            e.printStackTrace();
-            return false;
-        }
+                    mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
+                    mapJSON.put("startlng", Double.valueOf(entrance.getPosition().longitude).toString());
 
-        try{
+                    mapJSON.put("finishlat", Double.valueOf(exit.getPosition().latitude).toString());
+                    mapJSON.put("finishlng", Double.valueOf(exit.getPosition().longitude).toString());
 
-            for (Polyline polyline: maze) {
+                    jsonAll.put("map", mapJSON);
 
-                String encodedPolyline = PolyUtil.encode(polyline.getPoints());
-                singleLine = new JSONObject();
-                singleLine.put("draw", encodedPolyline);
+                } catch(org.json.JSONException e){
+                    e.printStackTrace();
+                    return;
+                }
+
+                try{
+
+                    for (Polyline polyline: maze) {
+
+                        String encodedPolyline = PolyUtil.encode(polyline.getPoints());
+                        singleLine = new JSONObject();
+                        singleLine.put("draw", encodedPolyline);
+
+                    }
+
+                    lineArray.put(singleLine);
+                    jsonAll.put("lines",lineArray);
+
+                    String response = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
+
+                    if (response == null) showSentMazeResponse(false);
+
+                    if (ServerService.decodeResponse(response) == 201){
+                        showSentMazeResponse(true);
+                    } else {
+                        showSentMazeResponse(false);
+                    }
+
+                } catch(java.util.concurrent.ExecutionException e){
+                    e.printStackTrace();
+                } catch(java.lang.InterruptedException e){
+                    e.printStackTrace();
+                } catch(org.json.JSONException e){
+                    e.printStackTrace();
+                }
 
             }
-
-            lineArray.put(singleLine);
-            jsonAll.put("lines",lineArray);
-
-
-            // TODO: localhost being used.
-            String response = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
-
-            if (ServerService.decodeResponse(response) == 201){
-                Toast toast = Toast.makeText(this, getText(R.string.created_maze_succ), Toast.LENGTH_LONG);
-                toast.show();
-            } else {
-                Toast toast = Toast.makeText(this, getText(R.string.created_maze_fail), Toast.LENGTH_LONG);
-                toast.show();
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int i) {
+                dialog.cancel();
             }
+        });
 
-
-
-        } catch(java.util.concurrent.ExecutionException e){
-            e.printStackTrace();
-        } catch(java.lang.InterruptedException e){
-            e.printStackTrace();
-        } catch(org.json.JSONException e){
-            e.printStackTrace();
-        }
+        builder.show();
 
         return true;
+    }
+
+    private void showSentMazeResponse(boolean sent){
+        if (sent) {
+            Toast toast = Toast.makeText(this, getText(R.string.created_maze_succ), Toast.LENGTH_LONG);
+            toast.show();
+        }else{
+            Toast toast = Toast.makeText(this, getText(R.string.created_maze_fail), Toast.LENGTH_LONG);
+            toast.show();
+        }
+
     }
 }
