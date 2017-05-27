@@ -1,18 +1,40 @@
 package com.feup.sdis.mapapp.client;
 
 import android.os.AsyncTask;
+import android.util.Base64;
 import android.util.Log;
 
+import com.feup.sdis.mapapp.MainActivity;
+
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.Key;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * This class implements the required HTTP communication methods
@@ -22,17 +44,29 @@ public class ServerService extends AsyncTask<String, Void, String> {
     /** URL to reach **/
     protected URL url;
     /** HttpURLConnection to make the communication **/
-    protected HttpURLConnection urlConnection;
+    protected HttpsURLConnection urlConnection;
     /** The response returned by the server **/
     String response;
-
+    /** HTTP response code **/
     int responseCode;
+    /** Server CA **/
+    InputStream certStream;
+    /** Trust Certificate **/
+    InputStream trustStream;
+    /** boa passe **/
+    char[] password = "123456".toCharArray();
 
     /** Default Constructor, does nothing **/
-    public ServerService() {
+    public ServerService(InputStream certStream, InputStream trustStream) {
         this.url = null;
         this.urlConnection = null;
         this.response = null;
+        this.certStream = certStream;
+        this.trustStream = trustStream;
+
+        if (certStream == null || trustStream == null) {
+            Log.i("Cert", "Null Certs!");
+        }
     }
 
     @Override
@@ -46,11 +80,21 @@ public class ServerService extends AsyncTask<String, Void, String> {
 
         try {
             // "http://10.0.2.2:8000/maps?name=mapa1
-            url = new URL("http://192.168.1.70:8000/" + parameters[0]);
+            url = new URL("https://192.168.1.70:8000/" + parameters[0]);
             String method = parameters[1];
 
-            /** open the connection and set the necessary method (params) **/
-            urlConnection = (HttpURLConnection) url.openConnection();
+            if (certStream == null || trustStream == null){
+                return null;
+            }
+
+            OurHostnameVerifier verifier = new OurHostnameVerifier();
+
+            SSLSocketFactory socketF = initSSL();
+            urlConnection.setDefaultSSLSocketFactory(socketF);
+            urlConnection.setDefaultHostnameVerifier(verifier);
+
+            urlConnection = (HttpsURLConnection) url.openConnection();
+
             urlConnection.setRequestMethod(method);
 
             switch(method) {
@@ -75,7 +119,8 @@ public class ServerService extends AsyncTask<String, Void, String> {
                 default: return null;
             }
 
-            return String.valueOf(this.responseCode) + " - " + this.response;
+            if (this.response != null)
+                return String.valueOf(this.responseCode) + " - " + this.response;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -129,6 +174,40 @@ public class ServerService extends AsyncTask<String, Void, String> {
 
     public static int decodeResponse(String fullResponse) {
         return Integer.parseInt(fullResponse.split(" - ")[0]);
+    }
+
+    private SSLSocketFactory initSSL() throws
+            KeyStoreException,
+            NoSuchAlgorithmException,
+            CertificateException,
+            IOException,
+            UnrecoverableKeyException,
+            KeyManagementException
+    {
+
+        // Load KeyStore With Bouncy Castle protocol BKS
+        KeyStore keystore = KeyStore.getInstance("BKS");
+        keystore.load(certStream, password);
+
+        // Load TrustStore because server uses self-signed certificate
+        KeyStore trustStore = KeyStore.getInstance("BKS");
+        trustStore.load(trustStream, password);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("X509");
+        kmf.init(keystore, password);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+        tmf.init(trustStore);
+
+        // Load SSL Context
+        SSLContext sslctx = SSLContext.getInstance("TLS");
+        sslctx.init(
+                kmf.getKeyManagers(),
+                tmf.getTrustManagers(),
+                new SecureRandom()
+        );
+
+        SSLSocketFactory socketF = sslctx.getSocketFactory();
+        return socketF;
     }
 
 }

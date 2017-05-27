@@ -32,6 +32,9 @@ import com.google.maps.android.PolyUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,6 +81,10 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
     /** Map name to be submitted **/
     private String mapName = "";
 
+    private InputStream certStream;
+
+    private InputStream trustStream;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +94,14 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        try {
+            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
+            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
 
@@ -343,7 +358,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                 try {
 
                     jsonAll.put("username", "user1");
-                    jsonAll.put("userhash", "ABC");
+                    jsonAll.put("accesstoken", "");
                     mapJSON.put("name", mapName);
 
                     mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
@@ -372,9 +387,13 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                     lineArray.put(singleLine);
                     jsonAll.put("lines",lineArray);
 
-                    String response = new ServerService().execute("maps", "PUT", jsonAll.toString()).get();
+                    String response = new ServerService(certStream, trustStream).execute("maps", "PUT", jsonAll.toString()).get();
 
-                    if (response == null) showSentMazeResponse(false);
+
+                    if (response == null) {
+                        showSentMazeResponse(false);
+                        return;
+                    }
 
                     if (ServerService.decodeResponse(response) == 201){
                         showSentMazeResponse(true);
