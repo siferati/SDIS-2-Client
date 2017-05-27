@@ -1,6 +1,7 @@
 package com.feup.sdis.mapapp;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -48,7 +49,8 @@ public class SelectMapActivity extends AppCompatActivity {
 
             Button btnMapName = new Button (this);
             btnMapName.setText("nome do mapa");
-
+            btnMapName.setTextColor(Color.WHITE);
+            btnMapName.setBackgroundColor(Color.parseColor("#75c4bc"));
             LinearLayout ll = (LinearLayout) findViewById(R.id.linlayout);
 
             LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
