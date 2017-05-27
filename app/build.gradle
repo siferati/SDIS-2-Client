@@ -17,6 +17,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    sourceSets { main { assets.srcDirs = ['src/main/assets', 'src/main/assets/'] } }
 }
 
 dependencies {
@@ -29,6 +30,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-maps:10.2.6'
     compile 'com.google.android.gms:play-services-location:10.2.6'
     compile 'com.google.maps.android:android-maps-utils:0.5+'
+    compile 'com.android.support:design:22.2.0'
     compile group: 'org.apache.httpcomponents', name: 'httpclient-android', version: '4.3.5.1'
     testCompile 'junit:junit:4.12'
 }

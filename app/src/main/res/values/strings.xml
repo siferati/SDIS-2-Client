@@ -15,4 +15,9 @@
     <string name="google_api_connection_error">An error has occurred and a connection to Google APIs could not be established</string>
     <string name="created_maze_succ">Maze submitted successfully</string>
     <string name="created_maze_fail">Maze submitted with no success</string>
+    <string name="login_fail_missing">Login failed, check required fields</string>
+    <string name="login_fail_userinvalid">Login failed, invalid user</string>
+    <string name="signup_fail_user">Sign up failed, chosen username is taken</string>
+    <string name="signup_fail">Sign up failed</string>
+    <string name="signup_succ">Sign up successful!</string>
 </resources>

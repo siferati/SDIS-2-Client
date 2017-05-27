@@ -118,9 +118,7 @@ public class ServerService extends AsyncTask<String, Void, String> {
                 }
                 default: return null;
             }
-
-            if (this.response != null)
-                return String.valueOf(this.responseCode) + " - " + this.response;
+            return String.valueOf(this.responseCode) + " - " + this.response;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,26 +135,40 @@ public class ServerService extends AsyncTask<String, Void, String> {
     protected void onPostExecute(String s){
         super.onPostExecute(s);
 
-        Log.i("Response", "" + this.response);
+        Log.i("Response", "" + this.responseCode + " - " + this.response);
     }
 
-    private void getResponse(HttpURLConnection urlConnection) throws IOException{
+    private void getResponse(HttpURLConnection urlConnection) {
 
-        InputStreamReader isw = new InputStreamReader(urlConnection.getInputStream());
-        BufferedReader reader = new BufferedReader(isw);
-
-        String response = "";
-        String line = "";
-
-        while ((line = reader.readLine()) != null) {
-            response += line;
+        try {
+            this.responseCode = urlConnection.getResponseCode();
+            Log.i("code", Integer.valueOf(responseCode).toString());
+        } catch (IOException e){
+            e.printStackTrace();
+            return;
         }
 
-        this.response = response;
-        this.responseCode = urlConnection.getResponseCode();
+        try {
+            InputStreamReader isw = new InputStreamReader(urlConnection.getInputStream());
+            BufferedReader reader = new BufferedReader(isw);
+
+            String response = "";
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                response += line;
+            }
+
+            this.response = response;
+        }
+        catch (Exception e ) {
+            Log.i("cas", Integer.valueOf(responseCode).toString() + " .. " + this.response);
+            this.response = null;
+        }
+        Log.i("Here",this.responseCode + " - " + this.response);
     }
 
-    private String postBody(HttpURLConnection urlConnection, String requestBody) throws IOException {
+    private void postBody(HttpURLConnection urlConnection, String requestBody) throws IOException {
 
         urlConnection.setDoOutput(true);
         urlConnection.setChunkedStreamingMode(0);
@@ -167,8 +179,6 @@ public class ServerService extends AsyncTask<String, Void, String> {
         Log.i("LOGGGG", requestBody);
 
         getResponse(urlConnection);
-
-        return this.response;
 
     }
 
