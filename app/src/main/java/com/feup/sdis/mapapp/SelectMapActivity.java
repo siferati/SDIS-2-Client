@@ -5,7 +5,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.Toast;
 
 import com.feup.sdis.mapapp.client.ServerService;
@@ -41,5 +44,18 @@ public class SelectMapActivity extends AppCompatActivity {
             }
         });
 
+        for(int i = 0; i < 3; i++){
+
+            Button btnMapName = new Button (this);
+            btnMapName.setText("nome do mapa");
+
+            LinearLayout ll = (LinearLayout) findViewById(R.id.linlayout);
+
+            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+            lp.setMargins(10, 10, 0, 0);
+            btnMapName.setLayoutParams(lp);
+            ll.addView(btnMapName, lp);
+        }
     }
+
 }
