@@ -123,6 +123,8 @@ public class MazePlayerActivity extends AppCompatActivity
 
     private InputStream trustStream;
 
+    private String owner = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -334,11 +336,14 @@ public class MazePlayerActivity extends AppCompatActivity
                     maze.add(polyline);
                 }
 
+                JSONObject mappJSON = mapJSON.getJSONObject("map");
+
                 double startlat, startlng, finishlat, finishlng;
-                startlat = mapJSON.getDouble("startlat");
-                startlng = mapJSON.getDouble("startlng");
-                finishlat = mapJSON.getDouble("finishlat");
-                finishlng = mapJSON.getDouble("finishlng");
+                startlat = mappJSON.getDouble("startlat");
+                startlng = mappJSON.getDouble("startlng");
+                finishlat = mappJSON.getDouble("finishlat");
+                finishlng = mappJSON.getDouble("finishlng");
+                owner = mappJSON.getString("owner");
 
                 entrance = map.addMarker(new MarkerOptions()
                         .position(new LatLng(startlat, startlng))
