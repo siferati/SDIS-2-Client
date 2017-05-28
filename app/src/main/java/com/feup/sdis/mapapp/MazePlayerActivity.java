@@ -99,22 +99,22 @@ public class MazePlayerActivity extends AppCompatActivity
     private boolean locationPermissionGranted = false;
 
     /** Last known location */
-    private Marker lastKnownLocation = null;
+    private volatile Marker lastKnownLocation = null;
 
     /** Last location that was within the maze */
-    private Marker lastValidLocation = null;
+    private volatile Marker lastValidLocation = null;
 
     /** List of all polylines that make up this maze */
     private ArrayList<Polyline> maze = new ArrayList<>();
 
     /** Entrance to the maze */
-    private Marker entrance = null;
+    private volatile Marker entrance = null;
 
     /** Exit to the maze */
-    private Marker exit = null;
+    private volatile Marker exit = null;
 
     /** Other players **/
-    private ArrayList<Marker> otherPlayers = null;
+    private volatile ArrayList<Marker> otherPlayers = null;
 
     /** Default map zoom */
     private static final int MIN_ZOOM = 18;
@@ -497,8 +497,54 @@ public class MazePlayerActivity extends AppCompatActivity
     }
 
     private void getPlayerPositions(){
-        String tempowner = "temp";
-        String response = new ServerService(certStream, trustStream).execute("users", "POST", userJSON.toString()).get();
+        new ServerService(this, certStream, trustStream){
+            @Override
+            public void onResponseReceived(String s){
+                if (s.startsWith("200")){
+                    try{
+                        otherPlayers = new ArrayList<Marker>();
+                        JSONObject positions = new JSONObject(response.split("200 - ")[1]);
+                        JSONArray all = positions.getJSONArray("players");
+                        for(int i = 0;i < all.length();i++){
+                            JSONObject player = all.getJSONObject(i);
+                            JSONObject position = player.getJSONObject("position");
+                            otherPlayers.add(map.addMarker(new MarkerOptions()
+                                .position(new LatLng(position.getDouble("lat"), position.getDouble("lng") ))
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))));
+                        }
+                    }catch(Exception e){
+                        return;
+                    }
+                }
+                
+                
+            }
+        }.execute("players", "GET");
+    }
 
+    private void sendPlayerPosition(){
+        double tmplat = lastKnownLocation().getPosition().latitude;
+        double tmplng = lastKnownLocation().getPosition().longitude;
+        String tmpusername = getIntent().getExtras().getString("username");
+        String tmpaccess = getIntent().getExtras().getString("accesstoken");
+        try{
+            JSONObject toSend = new JSONObject();
+            JSONObject coords = new JSONObject();
+            coords.put("lat",tmplat);
+            coords.put("lng",tmplng);
+            toSend.put("username",tmpusername);
+            toSend.put("accesstoken",tmpaccess);
+            toSend.put("position",coords);
+            new ServerService(this, certStream, trustStream){
+                @Override
+                public void onResponseReceived(String s){
+                    if (s.startsWith("200")){
+                        
+                    }    
+                }
+            }.execute("users", "POST", toSend.toString());
+        }catch(Exception e){
+            return;
+        }
     }
 }
