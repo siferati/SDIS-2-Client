@@ -106,6 +106,8 @@ public class LoginActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+
+
         if (response != null){
             if (response.startsWith("303")){
 
@@ -119,6 +121,7 @@ public class LoginActivity extends AppCompatActivity {
                     startActivity(intent);
 
                 } catch (Exception e) {
+                    Toast.makeText(LoginActivity.this, "Não!!!", Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
 
