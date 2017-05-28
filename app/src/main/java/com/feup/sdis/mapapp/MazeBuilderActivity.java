@@ -349,8 +349,8 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
                 try {
 
-                    jsonAll.put("username", "user1");
-                    jsonAll.put("accesstoken", "");
+                    jsonAll.put("username", getIntent().getExtras().getString("username"));
+                    jsonAll.put("accesstoken", getIntent().getExtras().getString("accesstoken"));
                     mapJSON.put("name", mapName);
 
                     mapJSON.put("startlat", Double.valueOf(entrance.getPosition().latitude).toString());
