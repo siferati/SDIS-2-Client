@@ -94,14 +94,6 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        try {
-            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
-            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
-
-        } catch (Exception e){
-            e.printStackTrace();
-        }
     }
 
 
@@ -387,6 +379,14 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                     lineArray.put(singleLine);
                     jsonAll.put("lines",lineArray);
 
+                    try {
+                        certStream = getApplicationContext().getAssets().open("testks.bks");
+                        trustStream = getApplicationContext().getAssets().open("truststore.bks");
+
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+
                     String response = new ServerService(certStream, trustStream).execute("maps", "PUT", jsonAll.toString()).get();
 
 
@@ -432,5 +432,17 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
             toast.show();
         }
 
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        try {
+            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
+            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

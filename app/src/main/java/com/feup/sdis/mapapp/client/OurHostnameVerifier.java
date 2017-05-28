@@ -10,6 +10,6 @@ import javax.net.ssl.SSLSession;
 public class OurHostnameVerifier implements HostnameVerifier {
     @Override
     public boolean verify(String hostname, SSLSession session){
-        return hostname.equals("192.168.1.70");
+        return hostname.equals("192.168.1.70") || hostname.equals("google.com");
     }
 }

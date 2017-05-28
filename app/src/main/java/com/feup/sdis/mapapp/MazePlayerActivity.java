@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.feup.sdis.mapapp.client.ServerService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -41,6 +42,10 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
 import com.google.maps.android.SphericalUtil;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -110,6 +115,10 @@ public class MazePlayerActivity extends AppCompatActivity
 
     /** Default map zoom */
     private static final int MIN_ZOOM = 18;
+
+    private InputStream certStream;
+
+    private InputStream trustStream;
 
 
     @Override
@@ -300,53 +309,50 @@ public class MazePlayerActivity extends AppCompatActivity
         // Get the current location of the device and set the position of the map.
         startLocationUpdates();
 
+        try {
+            refreshStreams();
+            String mapName = getIntent().getExtras().getString("mapname");
+            if (mapName == null) return;
+            String response = new ServerService(certStream, trustStream).execute("maps?name=" + mapName, "GET").get();
 
+            if (response.startsWith("200")){
+                JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);
 
-        // TODO download maze from server and remove hardcoded stuff
-        Polyline polyline1 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("itizFlins@B???????@?????@@??????@?????????@??????@??@???????@??????@@???????????@??@????@???????@??@????@?????@@????@???????@??????@??@?????????@??@??????@?????????@?A@@???????@????@??@???????@?????@???@@????@?????@????@??@?????????@?????????@@????@?????@@????@???????@??@??????@???"))
-                .color(Color.BLUE));
+                JSONArray lines = mapJSON.getJSONArray("lines");
 
-        Polyline polyline2 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("}sizFpins@AC???A???A???????A???????A?????A???????A???A???A?????A???????A?????A@A???A?????A?????A?A???A???A????@??A???????A??????@?????????@??A?????A?????A??"))
-                .color(Color.BLUE));
+                for(int i = 0; i<lines.length(); i++){
+                    JSONObject line = lines.getJSONObject(i);
+                    String code = line.getString("draw");
 
-        Polyline polyline3 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("orizF|ins@BE?A???A?A???A?A@A?A@A?ABC?A@EBC@C@C@E@C@E@E?C@C?A?A@??A???A@??A?C?A@A?C?A?A???A@????A@M?C?C?C?A?A@??A???A??@??A???A?A"))
-                .color(Color.BLUE));
+                    Polyline polyline = map.addPolyline(new PolylineOptions()
+                    .addAll(PolyUtil.decode(code))
+                    .color(Color.BLUE));
 
-        Polyline polyline4 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("aqizFhens@AG?A?C?A?E?C?E@E?E?E@C?C@E?C?A??@A???A???A??@A???A???A????@A???A?A@A???A?A???A?A?A@A???A?A???A?A?A??@A?A???A??@A?A?A???A?A??@A?A???A???A???A???A???A???A???A???A?A???A?A?A?????A???A???A?A???A@????A???A"))
-                .color(Color.BLUE));
+                    maze.add(polyline);
+                }
 
-        Polyline polyline5 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("kpizF~_ns@?G?A???A???A?A?A?A???C??@A???A?A?A???A??@A?A???A???A???A?A???A?A???A@A???A???C?A???A@I?A?A@A?A?A?A?A?A???A?A@A?A???A???A???A@A???A?A???A?A?A@A?A?A???C???A@??A???A?A???A@C?A?C?C?C@E?A?A???A@??A?????A@??A???A?A@??A???A@A?A"))
-                .color(Color.BLUE));
+                double startlat, startlng, finishlat, finishlng;
+                startlat = mapJSON.getDouble("startlat");
+                startlng = mapJSON.getDouble("startlng");
+                finishlat = mapJSON.getDouble("finishlat");
+                finishlng = mapJSON.getDouble("finishlng");
 
-        Polyline polyline6 = map.addPolyline(new PolylineOptions()
-                .addAll(PolyUtil.decode("irizFdjns@AE?A???A???A???A?A???A???A???A"))
-                .color(Color.BLUE));
+                entrance = map.addMarker(new MarkerOptions()
+                        .position(new LatLng(startlat, startlng))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                lastValidLocation = map.addMarker(new MarkerOptions()
+                        .position(entrance.getPosition())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
+                lastValidLocation.setVisible(false);
+                exit = map.addMarker(new MarkerOptions()
+                        .position(new LatLng(finishlat, finishlng))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            }
 
-        maze.add(polyline1);
-        maze.add(polyline2);
-        maze.add(polyline3);
-        maze.add(polyline4);
-        maze.add(polyline5);
-        maze.add(polyline6);
-
-        entrance = map.addMarker(new MarkerOptions()
-                .position(new LatLng(41.17825551202372, -8.598213940858841))
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
-
-        // same as entrance
-        lastValidLocation = map.addMarker(new MarkerOptions()
-                .position(entrance.getPosition())
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
-        lastValidLocation.setVisible(false);
-
-        exit = map.addMarker(new MarkerOptions()
-                .position(new LatLng(41.17767384142088, -8.595726862549782))
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+        } catch (Exception e ){
+            e.printStackTrace();
+            finish();
+        }
     }
 
 
@@ -461,5 +467,16 @@ public class MazePlayerActivity extends AppCompatActivity
         }
 
         return false;
+    }
+
+    private void refreshStreams(){
+
+        try {
+            certStream = getApplicationContext().getAssets().open("testks.bks");
+            trustStream = getApplicationContext().getAssets().open("truststore.bks");
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

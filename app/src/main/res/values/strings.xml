@@ -20,4 +20,7 @@
     <string name="signup_fail_user">Sign up failed, chosen username is taken</string>
     <string name="signup_fail">Sign up failed</string>
     <string name="signup_succ">Sign up successful!</string>
+    <string name="creation_fail">Game creation failed</string>
+    <string name="creation_succ">Game created with success</string>
+    <string name="map_404">Map not found</string>
 </resources>

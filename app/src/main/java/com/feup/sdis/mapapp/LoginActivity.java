@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.feup.sdis.mapapp.client.ActivityToken;
 import com.feup.sdis.mapapp.client.ServerService;
 
 import org.json.JSONObject;
@@ -63,6 +64,7 @@ public class LoginActivity extends AppCompatActivity {
                 try {
                     Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
                     startActivity(intent);
+                    finish();
                 }catch(Exception e ){
 
                 }
@@ -72,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void login() {
+
         if (!validateFields()){
             Toast.makeText(LoginActivity.this, getText(R.string.login_fail_missing), Toast.LENGTH_SHORT).show();
             return;
@@ -90,6 +93,14 @@ public class LoginActivity extends AppCompatActivity {
             userJSON.put("username", username);
             userJSON.put("userhash", bin2hex(getHash(userpass)));
 
+            try {
+                this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
+                this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+
             response = new ServerService(certStream, trustStream).execute("users", "POST", userJSON.toString()).get();
         } catch (Exception e ){
             e.printStackTrace();
@@ -97,7 +108,20 @@ public class LoginActivity extends AppCompatActivity {
 
         if (response != null){
             if (response.startsWith("303")){
-                Log.i("asd", response);
+
+                try {
+                    JSONObject userInfo = new JSONObject(response.split("303 - ")[1]);
+                    Log.i("asdas", userInfo.toString());
+                    String accessToken = userInfo.getString("accesstoken");
+                    String usernamea = userInfo.getString("username");
+
+                    Intent intent = ActivityToken.passUserToken(LoginActivity.this, StartActivity.class, accessToken, usernamea);
+                    startActivity(intent);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             } else if (response.startsWith("403")){
                 Toast.makeText(LoginActivity.this, getText(R.string.login_fail_userinvalid), Toast.LENGTH_SHORT).show();
             }
@@ -147,6 +171,18 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         return validated;
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        try {
+            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
+            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
 }

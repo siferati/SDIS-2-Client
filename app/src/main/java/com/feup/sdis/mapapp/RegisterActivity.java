@@ -59,6 +59,7 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     public void signup(){
+
         if (!validateFields()){
             Toast.makeText(RegisterActivity.this, getText(R.string.signup_fail), Toast.LENGTH_SHORT).show();
             return;
@@ -76,13 +77,22 @@ public class RegisterActivity extends AppCompatActivity {
             userJSON.put("username", username);
             userJSON.put("userhash", bin2hex(getHash(userpass)));
 
+            try {
+                certStream = getApplicationContext().getAssets().open("testks.bks");
+                trustStream = getApplicationContext().getAssets().open("truststore.bks");
+
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+
             response = new ServerService(certStream, trustStream).execute("users", "PUT", userJSON.toString()).get();
 
             Log.i("Register", response);
 
             if (response.startsWith("201")){
                 Toast.makeText(RegisterActivity.this, getText(R.string.signup_succ), Toast.LENGTH_SHORT).show();
-
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                startActivity(intent);
                 this.finish();
 
             }
@@ -141,6 +151,18 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         return validated;
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        try {
+            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
+            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
 }
