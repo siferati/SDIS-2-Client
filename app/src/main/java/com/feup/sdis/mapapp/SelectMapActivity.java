@@ -35,6 +35,8 @@ public class SelectMapActivity extends AppCompatActivity {
 
     private String[] maps;
 
+    String response;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,8 +67,13 @@ public class SelectMapActivity extends AppCompatActivity {
 
                                 refreshStreams();
 
-                                String response1 = new ServerService(certStream, trustStream).execute("maps?name=" + mapname, "GET").get();
-                                if (response1.startsWith("404")){
+                                new ServerService(certStream, trustStream){
+                                    @Override
+                                    public void onResponseReceived(String s){
+                                        response = s;
+                                    }
+                                }.execute("maps?name=" + mapname, "GET").get();
+                                if (response.startsWith("404")){
                                     Toast toast = Toast.makeText(SelectMapActivity.this, getText(R.string.map_404), Toast.LENGTH_LONG);
                                     toast.show();
                                     return;
@@ -79,7 +86,12 @@ public class SelectMapActivity extends AppCompatActivity {
 
                                 refreshStreams();
 
-                                String response = new ServerService(certStream, trustStream).execute("game", "PUT", gameJSON.toString()).get();
+                                response = new ServerService(certStream, trustStream){
+                                    @Override
+                                    public void onResponseReceived(String s){
+                                        response = s;
+                                    }
+                                }.execute("game", "PUT", gameJSON.toString()).get();
 
                                 if (response.startsWith("200")){
                                     Toast toast = Toast.makeText(SelectMapActivity.this, getText(R.string.creation_succ), Toast.LENGTH_LONG);
@@ -120,7 +132,12 @@ public class SelectMapActivity extends AppCompatActivity {
 
         try {
 
-            String response = new ServerService(certStream, trustStream).execute("game", "GET").get();
+            response = new ServerService(certStream, trustStream){
+                @Override
+                public void onResponseReceived(String s){
+                    response = s;
+                }
+            }.execute("game", "GET").get();
 
             JSONObject gamesJSON = new JSONObject(response.split("200 - ")[1]);
 

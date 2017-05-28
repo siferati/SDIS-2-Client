@@ -1,5 +1,6 @@
 package com.feup.sdis.mapapp.client;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
@@ -39,7 +40,8 @@ import javax.net.ssl.TrustManagerFactory;
 /**
  * This class implements the required HTTP communication methods
  */
-public class ServerService extends AsyncTask<String, Void, String> {
+public class ServerService extends AsyncTask<String, Void, String>
+                        implements ClientInterface{
 
     /** URL to reach **/
     protected URL url;
@@ -56,17 +58,36 @@ public class ServerService extends AsyncTask<String, Void, String> {
     /** boa passe **/
     char[] password = "123456".toCharArray();
 
+    Activity activity;
+
     /** Default Constructor, does nothing **/
+    public ServerService(Activity activity, InputStream certStream, InputStream trustStream) {
+        this.url = null;
+        this.urlConnection = null;
+        this.response = null;
+        this.certStream = certStream;
+        this.trustStream = trustStream;
+        this.activity =activity;
+
+        if (certStream == null || trustStream == null) {
+            Log.i("Cert", "Null Certs!");
+        }
+    }
+
     public ServerService(InputStream certStream, InputStream trustStream) {
         this.url = null;
         this.urlConnection = null;
         this.response = null;
         this.certStream = certStream;
         this.trustStream = trustStream;
+        this.activity = null;
 
         if (certStream == null || trustStream == null) {
             Log.i("Cert", "Null Certs!");
         }
+    }
+
+    public void onResponseReceived(String s) {
     }
 
     @Override
@@ -133,9 +154,7 @@ public class ServerService extends AsyncTask<String, Void, String> {
 
     @Override
     protected void onPostExecute(String s){
-        super.onPostExecute(s);
-
-        Log.i("Response", "" + this.responseCode + " - " + this.response);
+        onResponseReceived(s);
     }
 
     private void getResponse(HttpURLConnection urlConnection) {

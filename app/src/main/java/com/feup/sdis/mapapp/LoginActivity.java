@@ -31,6 +31,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private InputStream trustStream;
 
+    private String response;
+
     @Override
     public void onCreate (Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -88,7 +90,6 @@ public class LoginActivity extends AppCompatActivity {
 
         // Do Login
         JSONObject userJSON = new JSONObject();
-        String response = null;
         try {
             userJSON.put("username", username);
             userJSON.put("userhash", bin2hex(getHash(userpass)));
@@ -101,12 +102,15 @@ public class LoginActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            response = new ServerService(certStream, trustStream).execute("users", "POST", userJSON.toString()).get();
+            response = new ServerService(this, certStream, trustStream) {
+                @Override
+                public void onResponseReceived(String s){
+                    response = s;
+                }
+            }.execute("users", "POST", userJSON.toString()).get();
         } catch (Exception e ){
             e.printStackTrace();
         }
-
-
 
         if (response != null){
             if (response.startsWith("303")){

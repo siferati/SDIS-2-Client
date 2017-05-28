@@ -122,6 +122,8 @@ public class MazePlayerActivity extends AppCompatActivity
 
     private String owner = null;
 
+    private String response;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -315,7 +317,13 @@ public class MazePlayerActivity extends AppCompatActivity
             refreshStreams();
             String mapName = getIntent().getExtras().getString("mapname");
             if (mapName == null) return;
-            String response = new ServerService(certStream, trustStream).execute("maps?name=" + mapName, "GET").get();
+
+            response = new ServerService(this, certStream, trustStream){
+                @Override
+                public void onResponseReceived(String s){
+                    response = s;
+                }
+            }.execute("maps?name=" + mapName, "GET").get();
 
             if (response.startsWith("200")){
                 JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);

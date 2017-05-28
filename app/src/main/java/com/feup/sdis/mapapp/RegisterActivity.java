@@ -30,6 +30,8 @@ public class RegisterActivity extends AppCompatActivity {
 
     private InputStream trustStream;
 
+    private String response;
+
     @Override
     public void onCreate (Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -72,7 +74,6 @@ public class RegisterActivity extends AppCompatActivity {
         String userpass = userPass.getText().toString();
 
         JSONObject userJSON = new JSONObject();
-        String response = null;
         try {
             userJSON.put("username", username);
             userJSON.put("userhash", bin2hex(getHash(userpass)));
@@ -85,7 +86,12 @@ public class RegisterActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            response = new ServerService(certStream, trustStream).execute("users", "PUT", userJSON.toString()).get();
+            response = new ServerService(certStream, trustStream){
+                @Override
+                public void onResponseReceived(String s){
+                    response = s;
+                }
+            }.execute("users", "PUT", userJSON.toString()).get();
 
             Log.i("Register", response);
 

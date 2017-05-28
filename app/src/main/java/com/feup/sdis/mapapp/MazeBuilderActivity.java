@@ -85,6 +85,8 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
 
     private InputStream trustStream;
 
+    private String response;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -387,8 +389,12 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                         e.printStackTrace();
                     }
 
-                    String response = new ServerService(certStream, trustStream).execute("maps", "PUT", jsonAll.toString()).get();
-
+                    response = new ServerService(certStream, trustStream) {
+                        @Override
+                        public void onResponseReceived(String s){
+                            response = s;
+                        }
+                    }.execute("maps", "PUT", jsonAll.toString()).get();
 
                     if (response == null) {
                         showSentMazeResponse(false);
@@ -401,11 +407,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
                         showSentMazeResponse(false);
                     }
 
-                } catch(java.util.concurrent.ExecutionException e){
-                    e.printStackTrace();
-                } catch(java.lang.InterruptedException e){
-                    e.printStackTrace();
-                } catch(org.json.JSONException e){
+                } catch( Exception e){
                     e.printStackTrace();
                 }
 
