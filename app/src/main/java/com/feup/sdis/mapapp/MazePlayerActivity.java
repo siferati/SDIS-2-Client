@@ -113,6 +113,9 @@ public class MazePlayerActivity extends AppCompatActivity
     /** Exit to the maze */
     private Marker exit = null;
 
+    /** Other players **/
+    private ArrayList<Marker> otherPlayers = null;
+
     /** Default map zoom */
     private static final int MIN_ZOOM = 18;
 
@@ -491,5 +494,11 @@ public class MazePlayerActivity extends AppCompatActivity
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private void getPlayerPositions(){
+        String tempowner = "temp";
+        String response = new ServerService(certStream, trustStream).execute("users", "POST", userJSON.toString()).get();
+
     }
 }
