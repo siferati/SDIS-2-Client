@@ -35,6 +35,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -129,8 +130,12 @@ public class MazePlayerActivity extends AppCompatActivity
 
     private String owner = null;
 
+
     private String response;
 
+    String mapName;
+
+    double startlat, startlng, finishlat, finishlng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,6 +158,45 @@ public class MazePlayerActivity extends AppCompatActivity
                 .setInterval(LOCATION_REQUEST_INTERVAL)
                 .setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVAL)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        try {
+            refreshStreams();
+            mapName = getIntent().getExtras().getString("mapname");
+            if (mapName == null) return;
+
+            response = new ServerService(this, certStream, trustStream) {
+                @Override
+                public void onResponseReceived(String s) {
+                    response = s;
+                }
+            }.execute("maps?name=" + mapName, "GET").get();
+
+            if (response.startsWith("200")) {
+                JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);
+
+                JSONArray lines = mapJSON.getJSONArray("lines");
+
+                for (int i = 0; i < lines.length(); i++) {
+                    JSONObject line = lines.getJSONObject(i);
+                    String code = line.getString("draw");
+
+                    Polyline polyline = map.addPolyline(new PolylineOptions()
+                            .addAll(PolyUtil.decode(code))
+                            .color(Color.BLUE));
+
+                    maze.add(polyline);
+                }
+
+                JSONObject mappJSON = mapJSON.getJSONObject("map");
+
+                startlat = mappJSON.getDouble("startlat");
+                startlng = mappJSON.getDouble("startlng");
+                finishlat = mappJSON.getDouble("finishlat");
+                finishlng = mappJSON.getDouble("finishlng");
+                owner = mappJSON.getString("owner");
+
+            }
+        } catch (Exception e) {
+        }
     }
 
 
@@ -222,9 +266,12 @@ public class MazePlayerActivity extends AppCompatActivity
             case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                 // Location settings are not satisfied. However, we have no way to fix the
                 // settings so we won't show the dialog.
-                Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
-                toast.show();
-                finish();
+                //Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
+                //toast.show();
+                //finish();
+                mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                        .findFragmentById(R.id.map_maze_player);
+                mapFragment.getMapAsync(this);
 
                 break;
 
@@ -321,42 +368,6 @@ public class MazePlayerActivity extends AppCompatActivity
         startLocationUpdates();
 
         try {
-            refreshStreams();
-            String mapName = getIntent().getExtras().getString("mapname");
-            if (mapName == null) return;
-
-            response = new ServerService(this, certStream, trustStream){
-                @Override
-                public void onResponseReceived(String s){
-                    response = s;
-                }
-            }.execute("maps?name=" + mapName, "GET").get();
-
-            if (response.startsWith("200")){
-                JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);
-
-                JSONArray lines = mapJSON.getJSONArray("lines");
-
-                for(int i = 0; i<lines.length(); i++){
-                    JSONObject line = lines.getJSONObject(i);
-                    String code = line.getString("draw");
-
-                    Polyline polyline = map.addPolyline(new PolylineOptions()
-                    .addAll(PolyUtil.decode(code))
-                    .color(Color.BLUE));
-
-                    maze.add(polyline);
-                }
-
-                JSONObject mappJSON = mapJSON.getJSONObject("map");
-
-                double startlat, startlng, finishlat, finishlng;
-                startlat = mappJSON.getDouble("startlat");
-                startlng = mappJSON.getDouble("startlng");
-                finishlat = mappJSON.getDouble("finishlat");
-                finishlng = mappJSON.getDouble("finishlng");
-                owner = mappJSON.getString("owner");
-
                 entrance = map.addMarker(new MarkerOptions()
                         .position(new LatLng(startlat, startlng))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
@@ -367,8 +378,6 @@ public class MazePlayerActivity extends AppCompatActivity
                 exit = map.addMarker(new MarkerOptions()
                         .position(new LatLng(finishlat, finishlng))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
-            }
-
         } catch (Exception e ){
             e.printStackTrace();
             finish();
@@ -533,8 +542,8 @@ public class MazePlayerActivity extends AppCompatActivity
     }
 
     private void sendPlayerPosition(){
-        double tmplat = lastKnownLocation().getPosition().latitude;
-        double tmplng = lastKnownLocation().getPosition().longitude;
+        double tmplat = lastKnownLocation.getPosition().latitude;
+        double tmplng = lastKnownLocation.getPosition().longitude;
         String tmpusername = getIntent().getExtras().getString("username");
         String tmpaccess = getIntent().getExtras().getString("accesstoken");
         try{
