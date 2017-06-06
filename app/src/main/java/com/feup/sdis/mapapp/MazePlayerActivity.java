@@ -117,6 +117,10 @@ public class MazePlayerActivity extends AppCompatActivity
     /** Other players **/
     private volatile ArrayList<Marker> otherPlayers = new ArrayList<>();
 
+    /** Timeout counter **/
+
+    private volatile timeoutCounter = 0;
+
     /** Default map zoom */
     private static final int MIN_ZOOM = 17;
 
@@ -528,6 +532,7 @@ public class MazePlayerActivity extends AppCompatActivity
             @Override
             public void onResponseReceived(String s){
                 if (s.startsWith("200")){
+                    timeoutCounter = 0;
                     try{
                         Log.d("inTry", "");
                         otherPlayers.clear();
@@ -542,6 +547,11 @@ public class MazePlayerActivity extends AppCompatActivity
                         }
                     }catch(Exception e){
                         return;
+                    }
+                }else{
+                    timeoutCounter++;
+                    if(timeoutCounter > 5){
+                        //exit
                     }
                 }
                 
