@@ -184,8 +184,8 @@ public class LoginActivity extends AppCompatActivity {
     public void onStart(){
         super.onStart();
         try {
-            this.certStream = this.getApplicationContext().getAssets().open("testks.bks");
-            this.trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
+            certStream = this.getApplicationContext().getAssets().open("testks.bks");
+            trustStream = this.getApplicationContext().getAssets().open("truststore.bks");
 
         } catch (Exception e){
             e.printStackTrace();

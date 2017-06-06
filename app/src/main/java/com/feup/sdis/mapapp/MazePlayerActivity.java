@@ -115,10 +115,10 @@ public class MazePlayerActivity extends AppCompatActivity
     private volatile Marker exit = null;
 
     /** Other players **/
-    private volatile ArrayList<Marker> otherPlayers = null;
+    private volatile ArrayList<Marker> otherPlayers = new ArrayList<>();
 
     /** Default map zoom */
-    private static final int MIN_ZOOM = 18;
+    private static final int MIN_ZOOM = 17;
 
     private InputStream certStream;
 
@@ -154,45 +154,7 @@ public class MazePlayerActivity extends AppCompatActivity
                 .setInterval(LOCATION_REQUEST_INTERVAL)
                 .setFastestInterval(LOCATION_REQUEST_FASTEST_INTERVAL)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        try {
-            refreshStreams();
-            mapName = getIntent().getExtras().getString("mapname");
-            if (mapName == null) return;
 
-            response = new ServerService(this, certStream, trustStream) {
-                @Override
-                public void onResponseReceived(String s) {
-                    response = s;
-                }
-            }.execute("maps?name=" + mapName, "GET").get();
-
-            if (response.startsWith("200")) {
-                JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);
-
-                JSONArray lines = mapJSON.getJSONArray("lines");
-
-                for (int i = 0; i < lines.length(); i++) {
-                    JSONObject line = lines.getJSONObject(i);
-                    String code = line.getString("draw");
-
-                    Polyline polyline = map.addPolyline(new PolylineOptions()
-                            .addAll(PolyUtil.decode(code))
-                            .color(Color.BLUE));
-
-                    maze.add(polyline);
-                }
-
-                JSONObject mappJSON = mapJSON.getJSONObject("map");
-
-                startlat = mappJSON.getDouble("startlat");
-                startlng = mappJSON.getDouble("startlng");
-                finishlat = mappJSON.getDouble("finishlat");
-                finishlng = mappJSON.getDouble("finishlng");
-                owner = mappJSON.getString("owner");
-
-            }
-        } catch (Exception e) {
-        }
     }
 
 
@@ -210,15 +172,23 @@ public class MazePlayerActivity extends AppCompatActivity
      */
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-
+    // TODO DESCOMENTAR
         // Build location settings request
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+        /*LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(locationRequest)
                 .setAlwaysShow(true);
 
         // Check whether current location settings are satisfied
         PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
-        result.setResultCallback(this);
+        result.setResultCallback(this);*/
+        //TODO TIRAR ISTO
+        locationPermissionGranted = true;
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map_maze_player);
+        mapFragment.getMapAsync(this);
+
+
+
     }
 
 
@@ -262,9 +232,9 @@ public class MazePlayerActivity extends AppCompatActivity
             case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                 // Location settings are not satisfied. However, we have no way to fix the
                 // settings so we won't show the dialog.
-                //Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
-                //toast.show();
-                //finish();
+                Toast toast = Toast.makeText(this, "Can't use location services. Impossible to play a maze", Toast.LENGTH_LONG);
+                toast.show();
+                finish();
                 mapFragment = (SupportMapFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.map_maze_player);
                 mapFragment.getMapAsync(this);
@@ -350,6 +320,48 @@ public class MazePlayerActivity extends AppCompatActivity
 
         map = googleMap;
 
+        try {
+            refreshStreams();
+            mapName = getIntent().getExtras().getString("mapname");
+            if (mapName == null) return;
+
+            response = new ServerService(this, certStream, trustStream) {
+                @Override
+                public void onResponseReceived(String s) {
+                    response = s;
+                }
+            }.execute("maps?name=" + mapName, "GET").get();
+
+            if (response.startsWith("200")) {
+                JSONObject mapJSON = new JSONObject(response.split("200 - ")[1]);
+
+                JSONArray lines = mapJSON.getJSONArray("lines");
+
+                Log.d("lines", "" + lines.length());
+
+                for (int i = 0; i < lines.length(); i++) {
+                    JSONObject line = lines.getJSONObject(i);
+                    String code = line.getString("draw");
+
+                    Polyline polyline = map.addPolyline(new PolylineOptions()
+                            .addAll(PolyUtil.decode(code))
+                            .color(Color.BLUE));
+
+                    maze.add(polyline);
+                }
+
+                JSONObject mappJSON = mapJSON.getJSONObject("map");
+
+                startlat = mappJSON.getDouble("startlat");
+                startlng = mappJSON.getDouble("startlng");
+                finishlat = mappJSON.getDouble("finishlat");
+                finishlng = mappJSON.getDouble("finishlng");
+                owner = mappJSON.getString("owner");
+
+            }
+        } catch (Exception e) {
+        }
+
         UiSettings uiSettings = map.getUiSettings();
 
         // disable unwanted ui settings
@@ -374,6 +386,8 @@ public class MazePlayerActivity extends AppCompatActivity
                 exit = map.addMarker(new MarkerOptions()
                         .position(new LatLng(finishlat, finishlng))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+                Log.w("entrance", entrance.getPosition() + ";" + exit.getPosition());
         } catch (Exception e ){
             e.printStackTrace();
             finish();
@@ -414,7 +428,6 @@ public class MazePlayerActivity extends AppCompatActivity
 
         Log.d("dani", latLng.toString());
         Log.d("dani", DateFormat.getTimeInstance().format(new Date()));
-
         update(latLng);
     }
 
@@ -443,6 +456,10 @@ public class MazePlayerActivity extends AppCompatActivity
      */
     private void update(LatLng lastKnownLatLng) {
 
+        getPlayerPositions();
+
+        Log.d("otherPlayers", "" + otherPlayers.size());
+
         // remove previous marker
         if (lastKnownLocation != null) {
             lastKnownLocation.remove();
@@ -457,11 +474,8 @@ public class MazePlayerActivity extends AppCompatActivity
         map.moveCamera(CameraUpdateFactory.newLatLng(
                lastKnownLatLng));
 
-        if (lastValidLocation.getPosition().equals(entrance.getPosition())) {
-            Toast.makeText(this, "Please go to the entrance of the maze", Toast.LENGTH_SHORT).show();
-            lastValidLocation.setVisible(false);
-        }
-        else if (isPlayerOnMaze()) {
+        // TODO FIX THIS
+        if (isPlayerOnMaze()) {
 
             if (SphericalUtil.computeDistanceBetween(lastKnownLatLng, lastValidLocation.getPosition()) > MOVE_TOLERANCE) {
                 Toast.makeText(this, "Please return to your previous location", Toast.LENGTH_SHORT).show();
@@ -470,6 +484,10 @@ public class MazePlayerActivity extends AppCompatActivity
                 lastValidLocation.setVisible(false);
                 lastValidLocation.setPosition(lastKnownLatLng);
             }
+        }
+        else if (lastValidLocation.getPosition().equals(entrance.getPosition())) {
+            Toast.makeText(this, "Please go to the entrance of the maze", Toast.LENGTH_SHORT).show();
+            lastValidLocation.setVisible(false);
         }
         else {
             Toast.makeText(this, "Please return to your previous location", Toast.LENGTH_SHORT).show();
@@ -511,7 +529,8 @@ public class MazePlayerActivity extends AppCompatActivity
             public void onResponseReceived(String s){
                 if (s.startsWith("200")){
                     try{
-                        otherPlayers = new ArrayList<Marker>();
+                        Log.d("inTry", "");
+                        otherPlayers.clear();
                         JSONObject positions = new JSONObject(response.split("200 - ")[1]);
                         JSONArray all = positions.getJSONArray("players");
                         for(int i = 0;i < all.length();i++){
@@ -528,10 +547,12 @@ public class MazePlayerActivity extends AppCompatActivity
                 
                 
             }
-        }.execute("players", "GET");
+        }.execute("players?owner=" + owner, "GET");
+        //TODO FIX THIS NO SERVER, não está a add players
     }
 
-    private void sendPlayerPosition(){
+    /*private void sendPlayerPosition(){
+
         double tmplat = lastKnownLocation.getPosition().latitude;
         double tmplng = lastKnownLocation.getPosition().longitude;
         String tmpusername = getIntent().getExtras().getString("username");
@@ -555,5 +576,5 @@ public class MazePlayerActivity extends AppCompatActivity
         }catch(Exception e){
             return;
         }
-    }
+    }*/
 }

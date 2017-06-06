@@ -1,6 +1,7 @@
 package com.feup.sdis.mapapp.client;
 
 import android.app.Activity;
+import android.app.Application;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
@@ -101,7 +102,7 @@ public class ServerService extends AsyncTask<String, Void, String>
 
         try {
             // "http://10.0.2.2:8000/maps?name=mapa1
-            url = new URL("https://192.168.1.70:8000/" + parameters[0]);
+            url = new URL("https://172.30.2.216:8000/" + parameters[0]);
             String method = parameters[1];
 
             if (certStream == null || trustStream == null){
@@ -216,11 +217,11 @@ public class ServerService extends AsyncTask<String, Void, String>
 
         // Load KeyStore With Bouncy Castle protocol BKS
         KeyStore keystore = KeyStore.getInstance("BKS");
-        keystore.load(certStream, password);
+        keystore.load(MyApp.getContext().getAssets().open("testks.bks"), password);
 
         // Load TrustStore because server uses self-signed certificate
         KeyStore trustStore = KeyStore.getInstance("BKS");
-        trustStore.load(trustStream, password);
+        trustStore.load(MyApp.getContext().getAssets().open("truststore.bks"), password);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("X509");
         kmf.init(keystore, password);
