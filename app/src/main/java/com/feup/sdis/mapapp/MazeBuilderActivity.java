@@ -154,7 +154,7 @@ public class MazeBuilderActivity extends AppCompatActivity implements OnMapReady
         map.setOnMapClickListener(this);
         map.setOnPolylineClickListener(this);
 
-        LatLngBounds feup = new LatLngBounds(new LatLng(41.118805, -8.606339), new LatLng(41.179133, -8.593830));
+        LatLngBounds feup = new LatLngBounds(new LatLng(41.177509, -8.598646), new LatLng(41.179133, -8.593830));
         // can't scroll past feup bounds
 
         // center camera on feup

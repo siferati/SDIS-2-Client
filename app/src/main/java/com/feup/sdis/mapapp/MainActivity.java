@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     if (isConnected()) {
-                        Intent intent = new Intent(MainActivity.this, HowToActivity.class);
+                        Intent intent = new Intent(MainActivity.this, MazeBuilderActivity.class);
                         startActivity(intent);
                     } else {
                         Toast.makeText(MainActivity.this, getText(R.string.no_internet_error), Toast.LENGTH_SHORT).show();

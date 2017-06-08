@@ -119,7 +119,7 @@ public class MazePlayerActivity extends AppCompatActivity
 
     /** Timeout counter **/
 
-    private volatile timeoutCounter = 0;
+    private volatile int timeoutCounter = 0;
 
     /** Default map zoom */
     private static final int MIN_ZOOM = 17;
@@ -168,6 +168,9 @@ public class MazePlayerActivity extends AppCompatActivity
         // TODO check if this is before or after super call
         if (googleApiClient.isConnected())
             googleApiClient.disconnect();
+
+        
+
     }
 
 
@@ -362,6 +365,23 @@ public class MazePlayerActivity extends AppCompatActivity
                 finishlng = mappJSON.getDouble("finishlng");
                 owner = mappJSON.getString("owner");
 
+                Log.w("here", "hereeeeeeeeee");
+
+                JSONObject gamePOSTJSON = new JSONObject();
+                gamePOSTJSON.put("username", getIntent().getExtras().getString("username"));
+                gamePOSTJSON.put("accesstoken", getIntent().getExtras().getString("accesstoken"));
+                gamePOSTJSON.put("owner", owner);
+                gamePOSTJSON.put("position",
+                        new JSONObject()
+                                .put("lat", startlat).put("lng", startlng));
+
+                response = new ServerService(certStream, trustStream){
+                    @Override
+                    public void onResponseReceived(String s){
+                        response = s;
+                    }
+                }.execute("game", "POST", gamePOSTJSON.toString()).get();
+
             }
         } catch (Exception e) {
         }
@@ -487,6 +507,25 @@ public class MazePlayerActivity extends AppCompatActivity
             } else {
                 lastValidLocation.setVisible(false);
                 lastValidLocation.setPosition(lastKnownLatLng);
+
+                try{
+                    JSONObject gamePOSTJSON = new JSONObject();
+                    gamePOSTJSON.put("username", getIntent().getExtras().getString("username"));
+                    gamePOSTJSON.put("accesstoken", getIntent().getExtras().getString("accesstoken"));
+                    gamePOSTJSON.put("owner", owner);
+                    gamePOSTJSON.put("position",
+                            new JSONObject()
+                                    .put("lat", lastKnownLatLng.latitude).put("lng", lastKnownLatLng.longitude));
+
+                    response = new ServerService(certStream, trustStream){
+                        @Override
+                        public void onResponseReceived(String s){
+                            response = s;
+                        }
+                    }.execute("players", "POST", gamePOSTJSON.toString()).get();
+                } catch (Exception e) {
+                }
+
             }
         }
         else if (lastValidLocation.getPosition().equals(entrance.getPosition())) {
@@ -531,13 +570,19 @@ public class MazePlayerActivity extends AppCompatActivity
         new ServerService(this, certStream, trustStream){
             @Override
             public void onResponseReceived(String s){
+                Log.d("RESPONSE", s);
                 if (s.startsWith("200")){
+                    Log.d("INIF", "INIF");
                     timeoutCounter = 0;
                     try{
-                        Log.d("inTry", "");
+                        Log.d("inTry", "asdasdasdas");
+                        for(int i = 0;i < otherPlayers.size();++i){
+                            otherPlayers.get(i).remove();
+                            Log.d("InFor", ""+ otherPlayers.size());
+                        }
                         otherPlayers.clear();
-                        JSONObject positions = new JSONObject(response.split("200 - ")[1]);
-                        JSONArray all = positions.getJSONArray("players");
+                        JSONObject players = new JSONObject(s.split("200 - ")[1]);
+                        JSONArray all = players.getJSONArray("players");
                         for(int i = 0;i < all.length();i++){
                             JSONObject player = all.getJSONObject(i);
                             JSONObject position = player.getJSONObject("position");
@@ -545,6 +590,7 @@ public class MazePlayerActivity extends AppCompatActivity
                                 .position(new LatLng(position.getDouble("lat"), position.getDouble("lng") ))
                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))));
                         }
+                        Log.d("OtherPlayers", "" + otherPlayers.size());
                     }catch(Exception e){
                         return;
                     }

@@ -9,6 +9,9 @@ import android.content.Context;
 
 public class MyApp extends Application {
     private static MyApp instance;
+    private static String username;
+    private static String accessToken;
+    private static String mapName;
 
     public static MyApp getInstance() {
         return instance;
@@ -19,9 +22,33 @@ public class MyApp extends Application {
         // or return instance.getApplicationContext();
     }
 
+    public static String getUsername(){
+        return username;
+    }
+
+    public static String getAccessToken(){
+        return accessToken;
+    }
+
+    public static String getMapName(){
+        return mapName;
+    }
+
     @Override
     public void onCreate() {
         instance = this;
         super.onCreate();
+    }
+
+    public static void setUsername(String name){
+        username = name;
+    }
+
+    public static void setAccessToken(String accesstoken){
+        accessToken = accesstoken;
+    }
+
+    public static void setMapName(String mapname){
+        mapName=mapname;
     }
 }

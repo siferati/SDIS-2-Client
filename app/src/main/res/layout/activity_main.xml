@@ -61,7 +61,7 @@
                 android:layout_width="382dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.10"
-                android:text="How To Play"
+                android:text="Click Me"
                 tools:layout_editor_absoluteX="8dp"
                 tools:layout_editor_absoluteY="214dp"
                 android:background="#80cbc4"
